@@ -8,6 +8,10 @@ Since I don't want to plainly copy the code, but learn something, I want to do i
 For the hardware I oriented myself on the project: I have an FireBeetle ESP32-E as microcontroller and a Waveshare 5.83" Black and White E-Ink display.
 Since the original project only offers support for 7 or 8 inch displays, I really have to do it myself.
 
+#### Waveshare E-Ink Display
+
+The display is black and white only and has a resolution of 648x480
+
 ### Project Structure
 At least for the beginning, I want to create a small Flask backend that serves as proxy to the online weather forecast.
 This way I can reduce the computing and image construction on the ESP such that it only requests to a specific endpoint and gets the image to display.
