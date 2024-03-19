@@ -23,6 +23,8 @@
  * THE SOFTWARE.
  */
 
-extern const unsigned char gImage_5in83_V2[];
+#pragma once
+
+extern const unsigned char gImage_5in83_V2[38880];
 
 /* FILE END */

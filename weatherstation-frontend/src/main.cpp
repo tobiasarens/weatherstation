@@ -5,11 +5,82 @@
 #include "GUI_Paint.h"
 #include "imagedata.h"
 #include <stdlib.h>
+#include <WiFi.h>
+#include <HTTPClient.h>
 
-// put function declarations here:
-int myFunction(int, int);
+#include "ImageService.h"
+#include "Config.h"
+#include "BackendService.h"
+#include "util.h"
+#include "Display.h"
+
+ImageService imageService;
+BackendService backendService;
+Display display;
+
+WiFiClient client;
+
+unsigned char image_buffer[38880];
 
 void setup() {
+
+  Serial.begin(115200);
+  while(!Serial) {
+
+  }
+
+  Serial.println("Starting");
+
+  int status = 0;
+
+  WiFi.begin(wifi::ssid, wifi::pass);
+
+  while (WiFi.status() != WL_CONNECTED) {
+    Serial.print(".");
+    delay(500);
+  }
+
+  Serial.println("wifi connected");
+
+  display.init();
+  memcpy(image_buffer, gImage_5in83_V2, 38880);
+
+  backendService.getImage(image_buffer);
+
+  display.showImage(image_buffer);
+
+  display.poweroff();
+
+
+  Serial.println("END");
+  return;
+
+  //backendService.getImage(image_buffer);
+  /*
+    if (client.connect(backend::hostname, backend::port)) {
+
+      Serial.println("Connection successfull");
+
+      client.println("GET " + *"/image_c" + *" HTTP/1.1");
+      client.println("Host: " + *backend::hostname);
+      client.println("Connection: close");
+      client.println();
+
+      while(client.connected()) {
+          if (client.available()) {
+              char c = client.read();
+              Serial.print(int(c));
+          }
+      }
+      Serial.println("End of response");
+
+  } else {
+      Serial.println("Connection was not successfull");
+  }
+  */
+
+  return;
+
   printf("EPD_5IN83_V2_test Demo\r\n");
   DEV_Module_Init();
 
@@ -33,12 +104,12 @@ void setup() {
   printf("show image for array\r\n");
   Paint_SelectImage(BlackImage);
   Paint_Clear(WHITE);
-  Paint_DrawBitMap(gImage_5in83_V2);
+  Paint_DrawBitMap(imageService.getImagePointer());
   EPD_5IN83_V2_Display(BlackImage);
   DEV_Delay_ms(500);
 #endif
 
-#if 1   // Drawing on the image
+#if 0   // Drawing on the image
   //1.Select Image
   printf("SelectImage:BlackImage\r\n");
   Paint_SelectImage(BlackImage);
@@ -69,20 +140,22 @@ void setup() {
   DEV_Delay_ms(2000);
 #endif
 
-  printf("Clear...\r\n");
-  EPD_5IN83_V2_Clear();
+  //printf("Clear...\r\n");
+  //EPD_5IN83_V2_Clear();
 
   printf("Goto Sleep...\r\n");
   EPD_5IN83_V2_Sleep();
+
+  EPD_5IN83_V2_Init();
+  EPD_5IN83_V2_Clear();
+
+
+  EPD_5IN83_V2_Sleep();
+
   free(BlackImage);
   BlackImage = NULL;
 }
 
 void loop() {
   // put your main code here, to run repeatedly:
-}
-
-// put function definitions here:
-int myFunction(int x, int y) {
-  return x + y;
 }
