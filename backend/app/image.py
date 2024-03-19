@@ -16,6 +16,12 @@ class ImageProducer:
         font = ImageFont.load_default()
         draw.text((50, 50), "Hello World", 1, font=font)
 
+    def load_file(self, file):
+        im = Image.open(file, 'r')
+        self.image = im.convert('1')
+        print(f"image size: {self.image.size}")
+        
+
     def load_c_string(self, cs):
         self.image.frombytes(bytearray(cs))
 
