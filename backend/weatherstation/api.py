@@ -39,6 +39,7 @@ class OpenWeatherAPI:
         lon = lat_lon[1]
 
         request_url = f"https://api.openweathermap.org/data/3.0/onecall?lat={lat}&lon={lon}&units=metric&lang=de&appid={self.api_key}"
+        logger.info(f'calling: {request_url}')
 
         response = requests.get(request_url)
 

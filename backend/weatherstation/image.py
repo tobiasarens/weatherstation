@@ -4,7 +4,7 @@ from PIL import Image, ImageFont, ImageDraw
 import PIL
 from io import BytesIO
 from weatherstation.api import api, get_API_icon_path
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 import matplotlib.pyplot as plt
 import logging
 import cairosvg
@@ -81,57 +81,85 @@ class ImageProducer:
         draw.text((340, 10), "Geilenkirchen", (0, 0, 0), font=font_heading, stroke_width=0)
         
         date = datetime.now().date()
-        draw.text((230, 50), str(date.strftime("%a, %d. %B %Y")), 'black', font_temperature)
-
+        draw.text((340, 50), str(date.strftime("%a, %d. %B %Y")), 'black', font_temperature)
 
         # rain graph
         rg = _get_rain_graph(weather_data)
-        _paste_png(image, rg, (200, 100))
+        _paste_png(image, rg, (190, 100))
 
+        # big today
+        img_today = load_icon(get_API_icon_path(current['weather'][0]['icon']), (100, 100))
+        _paste_png(image, img_today, pos=(20, 20))
+        draw.text((130, 40), f"{current['temp']:.1f}°C", 'black', _font(36))
+        draw.text((130, 90), f"Feels like {current['feels_like']:.1f}°C", 'black', _font(14))
 
-        # current weather
-        image_now = _icon_temperature(get_API_icon_path(current['weather'][0]['icon']), current['temp'] + 10, current['feels_like'])
-        #_paste_png(image, image_now, (100, 100))
+        # future days
 
-        # day parts
-
-        day_x = 260
+        day_x = 290
         day_y = 90
         day_pad = 80
 
         i = 1
-        # today
+        # tmrw
         day = daily[i]
         im_today = _icon_temperature(get_API_icon_path(day['weather'][0]['icon']), day['temp']['max'], day['temp']['min'], (date + timedelta(days=i)).strftime('%a'))
         _paste_png(image, im_today, (day_x, day_y))
 
         i += 1
 
-        # day
         day = daily[i]
         im_tomor = _icon_temperature(get_API_icon_path(day['weather'][0]['icon']), day['temp']['max'], day['temp']['min'], (date + timedelta(days=i)).strftime('%a'))
         _paste_png(image, im_tomor, (day_x + day_pad, day_y))
 
         i += 1
-        # eve
         day = daily[i]
         im_tomtom = _icon_temperature(get_API_icon_path(day['weather'][0]['icon']), day['temp']['max'], day['temp']['min'], (date + timedelta(days=i)).strftime('%a'))
         _paste_png(image, im_tomtom, (day_x + 2 * day_pad, day_y))
+
         i += 1
-        # night
         day = daily[i]
         im_tomtomtom = _icon_temperature(get_API_icon_path(day['weather'][0]['icon']), day['temp']['max'], day['temp']['min'], (date + timedelta(days=i)).strftime('%a'))
         _paste_png(image, im_tomtomtom, (day_x + 3 * day_pad, day_y))
         
 
-        # more info
-        im_rainpct = load_icon(get_wi_icon_path('wi-raindrops'))
-        _paste_png(image, im_rainpct, (100, 100))
-        draw.text((140, 110), f"{today['pop'] * 100}%", 'black', font_temp_felt)
+        stat_font = _font(18)
+        stat_x_align = 90
 
-        # tomorrow
-        # after tomorrow
-        # after
+        # more info
+
+        # temperature
+
+        im_tempmax = load_icon(get_wi_icon_path('wi-thermometer'))
+        _paste_png(image, im_tempmax, (40, 130))
+        draw.text((stat_x_align, 140), f'{today['temp']['max']:.1f}°C', 'black', stat_font)
+
+        im_tempmin = load_icon(get_wi_icon_path('wi-thermometer-exterior'))
+        _paste_png(image, im_tempmin, (40, 180))
+        draw.text((stat_x_align, 190), f'{today['temp']['min']:.1f}°C', 'black', stat_font)
+
+        # rain
+
+        im_rainpct = load_icon(get_wi_icon_path('wi-raindrops'))
+        _paste_png(image, im_rainpct, (40, 230))
+        draw.text((stat_x_align, 240), f"{today['pop'] * 100}%", 'black', stat_font)
+
+        # sunrise/set
+
+        im_sunrise = load_icon(get_wi_icon_path('wi-sunrise'))
+        _paste_png(image, im_sunrise, (40, 280))
+
+        time_sunrise = _owm_time_to_datetime(today['sunrise'])
+        draw.text((stat_x_align, 290), f'{time_sunrise.strftime("%H:%M")}', 'black', stat_font)
+
+
+        im_sunset = load_icon(get_wi_icon_path('wi-sunset'))
+        _paste_png(image, im_sunset, (40, 330))
+        time_sunset = _owm_time_to_datetime(today['sunset'])
+        draw.text((stat_x_align, 340), f'{time_sunset.strftime("%H:%M")}', 'black', stat_font)
+
+
+        # summary
+        #draw.text((40, 400), f"{today['summary']}", 'black', stat_font)
 
         
         # status bar
@@ -145,11 +173,22 @@ class ImageProducer:
 def _paste_png(image: Image.Image, png: Image.Image, pos: Tuple[int, int] = (0,0)):
     image.paste(png, pos, png.split()[3])
 
+def _font(size: int):
+    return ImageFont.load_default(size)
+
 def _center_text(draw: ImageDraw.ImageDraw, text: str, pos: Tuple[int, int], fill = 'black', font = None):
     _, _, w, h = draw.textbbox((0,0), text, font=font)
 
     position = (pos[0] - w/2, pos[1] - h/2)
     draw.text(position, text, font=font, fill=fill)
+
+def _owm_time_to_datetime(dt: int) -> datetime:
+    """
+    OpenWeatherMap delivers the time in unix time format. This function converts it into a datetime
+    """
+    time = datetime.utcfromtimestamp(dt)
+    time = time.replace(tzinfo=timezone.utc).astimezone(tz=None)
+    return time
 
 def _get_rain_graph(weatherdata: Dict, length = 16):
 
@@ -159,16 +198,31 @@ def _get_rain_graph(weatherdata: Dict, length = 16):
 
     start = datetime.now().hour
 
-    x = [_ for _ in range(length)]
-    height = [weatherdata['hourly'][t]['rain']['1h'] if 'rain' in weatherdata['hourly'][t] else 0 for t in range(length) ]
-
     fig, _ = plt.subplots(figsize=(4.5, 3.56))
+
+    # rain part
 
     ax = fig.axes[0]
 
-    ax.bar(x, height, width=1, color='black')
+    x = [_ for _ in range(length)]
+    height = [weatherdata['hourly'][t]['rain']['1h'] if 'rain' in weatherdata['hourly'][t] else 0 for t in range(length) ]
+
+    bars = ax.bar(x, height, width=1, edgecolor='gray', color='white')
+    for bar in bars:
+        bar.set_hatch('.')
     ax.set_xticks(x)
     ax.set_xticklabels([(start + t) % 24 for t in x])
+    ax.set_ylabel('rain [l/m³]')
+    ax.set_ybound(lower=0, upper=10)
+
+
+    # temperatur
+    temp = [weatherdata['hourly'][t]['temp'] for t in range(length)]
+    ax_temp = ax.twinx()
+    ax_temp.set_ylabel('temp [°C]')
+    ax_temp.plot(temp)
+
+    #fig.tight_layout()
 
     buffer = BytesIO()
     fig.savefig(buffer, format='png')
