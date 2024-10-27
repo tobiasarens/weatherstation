@@ -202,7 +202,14 @@ def _get_rain_graph(weatherdata: Dict, length = 16):
 
     # rain part
 
-    ax = fig.axes[0]
+    ax_temp = fig.axes[0]
+
+    # temperatur
+    temp = [weatherdata['hourly'][t]['temp'] for t in range(length)]
+    ax_temp.set_ylabel('temp [°C]')
+    ax_temp.plot(temp)
+
+    ax = ax_temp.twinx()
 
     x = [_ for _ in range(length)]
     height = [weatherdata['hourly'][t]['rain']['1h'] if 'rain' in weatherdata['hourly'][t] else 0 for t in range(length) ]
@@ -214,13 +221,6 @@ def _get_rain_graph(weatherdata: Dict, length = 16):
     ax.set_xticklabels([(start + t) % 24 for t in x])
     ax.set_ylabel('rain [l/m³]')
     ax.set_ybound(lower=0, upper=10)
-
-
-    # temperatur
-    temp = [weatherdata['hourly'][t]['temp'] for t in range(length)]
-    ax_temp = ax.twinx()
-    ax_temp.set_ylabel('temp [°C]')
-    ax_temp.plot(temp)
 
     #fig.tight_layout()
 
