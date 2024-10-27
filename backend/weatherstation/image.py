@@ -131,11 +131,11 @@ class ImageProducer:
 
         im_tempmax = load_icon(get_wi_icon_path('wi-thermometer'))
         _paste_png(image, im_tempmax, (40, 130))
-        draw.text((stat_x_align, 140), f'{today['temp']['max']:.1f}°C', 'black', stat_font)
+        draw.text((stat_x_align, 140), f"{today['temp']['max']:.1f}°C", 'black', stat_font)
 
         im_tempmin = load_icon(get_wi_icon_path('wi-thermometer-exterior'))
         _paste_png(image, im_tempmin, (40, 180))
-        draw.text((stat_x_align, 190), f'{today['temp']['min']:.1f}°C', 'black', stat_font)
+        draw.text((stat_x_align, 190), f"{today['temp']['min']:.1f}°C", 'black', stat_font)
 
         # rain
 
